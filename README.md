@@ -1,2 +1,5 @@
-# kivacrm-apiclient-js
-KivaCRM api client for javascript
+# KivaCRM JavaScript API
+
+# Usage
+
+https://github.com/mulesoft/js-client-oauth2

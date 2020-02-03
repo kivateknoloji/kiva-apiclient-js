@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+	<title>API for Browser (Auth code with pkce flow)</title>
+	<script src="../dist/kvapi.js"></script>
+	<script>
+		const CLIENT_ID = "kv_task_plugin";
+		const REDIRECT_URI = location.origin + location.pathname;
+		const $API = kvapi.client;
+
+		window.addEventListener("load", async function(){
+			$API.setUrl("https://local.kivacrm.com");
+			$API.setVersion(2);
+
+			const authFlow = new kvapi.auth.AuthCodePKCE(CLIENT_ID, REDIRECT_URI);
+			authFlow.setScope(['data', 'user']);
+			$API.setAuthFlow(authFlow);
+
+			if(location.search.indexOf("code=") !== -1){
+				await $API.authorize(location.href);
+				const token = await $API.getToken();
+				if(token){
+					log(token.toJSON());
+				}
+				// clear query params
+				history.replaceState({}, window.title, location.pathname);
+			}
+		});
+
+		function log(msg){
+			console.log.apply(console, arguments);
+			const m = typeof(msg) == 'object' ? JSON.stringify(msg, null, 2) : msg;
+			const el = document.getElementById("log");
+			el.value = m;
+		}
+
+		function authorize(){
+			window.location = $API.getAuthUri();
+		}
+
+		async function getAccessToken(){
+			const token = await $API.getToken();
+			log(token ? token.toJSON() : null);
+		}
+
+		async function revokeAccessToken(){
+			// revoke access and refresh token together
+			const rs = await $API.revoke();
+			log(rs);
+			return rs;
+		}
+
+		async function refreshAccessToken(){
+			const rs = await $API.refresh();
+			log(rs);
+		}
+
+		async function revokeRefreshToken(){
+			const rs = await $API.revokeRefreshToken();
+			log(rs);
+		}
+
+		async function fetchTasks(){
+			log("Loading...");
+
+			const rs = await $API.get("/data/act/task", {
+				fields: ['subject', 'start_date', 'task_status'],
+				limit: 5
+			});
+			log(rs.response);
+		}
+
+	</script>
+</head>
+<body>
+
+<fieldset style="width:90%;">
+	<legend>API for Browser (Auth code with pkce flow)</legend>
+	<button onclick="authorize();">Authorize</button>
+	<button onclick="getAccessToken();">Get Access Token</button>
+	<button onclick="revokeAccessToken();">Revoke Access</button>
+	<button onclick="refreshAccessToken();">Refresh Access Token</button>
+	<button onclick="revokeRefreshToken();">Revoke Refresh Token</button>
+	<br><br>
+	<button onclick="fetchTasks();">Fetch Tasks</button>
+	<button onclick="insertTasks();">Insert Task</button>
+	<button onclick="updateTasks();">Update Task</button>
+	<button onclick="upsertTasks();">Upsert Task</button>
+	<br>
+	<br><textarea id="log" style="width:100%;height:500px;"></textarea>
+</fieldset>
+
+</body>
+</html>
